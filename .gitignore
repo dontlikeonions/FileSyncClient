@@ -1,0 +1,4 @@
+/.venv/
+/settings.ini
+/logs/logs.log
+/.idea/*
