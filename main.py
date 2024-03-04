@@ -5,8 +5,8 @@ from file_sync_client import FileSyncClient
 
 def main():
     directories = [
-        # r"C:\Users\dmkuz\Desktop"
-        r"C:\Users\dmkuz\Desktop\ts"
+        r"C:\Users\dmkuz\Desktop\gn19",
+        r"C:\Users\dmkuz\Desktop\ts",
     ]
 
     client = FileSyncClient(directories, 0)
