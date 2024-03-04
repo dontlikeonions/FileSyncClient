@@ -22,7 +22,7 @@ class FileSyncClient:
                 - 0: Doesn't delete files form the server if they are not presented on local machine anymore (default).
                 - 1: Deletes files from the server if they are missing on local machine.
         """
-        assert mode < 0 or mode > 1
+        assert mode == 0 or mode == 1
         self.mode = mode
         self.sync_paths = sync_paths
         self.hash_table = {}
