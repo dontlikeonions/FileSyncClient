@@ -53,28 +53,40 @@ class EventHandler:
                     requests.file_name_update(self.session, old_path, old_rel_path, new_path, new_rel_path),
                     loop=self.loop
                 )
-
-            event, file_path = file_events[0]
-
-            # file was created or updated
-            if event == 1 or event == 2:
-                rel_path = get_relative_path(self.sync_paths, file_path)
-
-                file_hash = await calculate_hash(file_path)
-                asyncio.run_coroutine_threadsafe(
-                    requests.file_hash_update(self.session, rel_path, file_path, file_hash),
-                    loop=self.loop
-                )
-            # file was deleted
-            elif event == 3:
-                # send delete_file request
-                relative_path = get_relative_path(self.sync_paths, file_path)
-                asyncio.run_coroutine_threadsafe(
-                    requests.delete_file(self.session, file_path, relative_path),
-                    loop=self.loop
-                )
             else:
-                logger.error(f"Unexpected event: {changes}")
+                event, file_path = file_events[0]
+
+                # file was created or updated
+                if event == 1 or event == 2:
+                    rel_path = get_relative_path(self.sync_paths, file_path)
+                    asyncio.run_coroutine_threadsafe(
+                        self.prepare_hash_update(file_path, rel_path),
+                        loop=self.loop
+                    )
+                # file was deleted
+                elif event == 3:
+                    # send delete_file request
+                    relative_path = get_relative_path(self.sync_paths, file_path)
+                    asyncio.run_coroutine_threadsafe(
+                        requests.delete_file(self.session, file_path, relative_path),
+                        loop=self.loop
+                    )
+                else:
+                    logger.error(f"Unexpected event: {changes}")
+
+    async def prepare_hash_update(self, file_path: str | Path, rel_path: str | Path) -> None:
+        """
+        Calculates the hash of the file and sends a request
+
+        Args:
+            file_path (str | Path): The path of the file
+            rel_path (str | Path): The relative path of the file within the watching directory
+        """
+        file_hash = await calculate_hash(file_path)
+        asyncio.run_coroutine_threadsafe(
+            requests.file_hash_update(self.session, rel_path, file_path, file_hash),
+            loop=self.loop
+        )
 
 
 def get_relative_path(directories: List[str | Path], file_path: str | Path) -> str | None:
@@ -84,7 +96,7 @@ def get_relative_path(directories: List[str | Path], file_path: str | Path) -> s
 
     Args:
         directories (List[str]): List of directories to look for file
-        file_path (str): The path of the file
+        file_path (str | Path): The path of the file
 
     Return:
         str | None: The relative path of the file within the directory
