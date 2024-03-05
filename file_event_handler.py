@@ -36,7 +36,7 @@ class EventHandler:
             for change, path in changes:
                 file_events.append([change, path])
 
-            # file was renamed. It creates 2 events: Change.deleted (3) and Change.added (1)
+            # The file was renamed. It creates 2 events: Change.deleted (3) and Change.added (1)
             if len(file_events) > 1:
                 # Events can be in any order
                 if file_events[0][0] == 3:
