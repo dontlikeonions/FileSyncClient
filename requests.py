@@ -44,12 +44,11 @@ async def get_server_data(session: aiohttp.ClientSession) -> Dict:
             return data
     except asyncio.TimeoutError:
         logger.error(f"Timeout error: Unable to get data from server for {REQUEST_TIMEOUT} seconds")
+        return {}
     except aiohttp.client_exceptions.ClientConnectorError as e:
         logger.error(e)
         print(f"Cannot connect to host {SERVER_IP}:{DEFAULT_PORT} Try to reload the app")
         sys.exit()
-    finally:
-        return {}
 
 
 async def file_hash_update(session: aiohttp.ClientSession, relative_path: str, file_path: str, file_hash: str) -> None:
