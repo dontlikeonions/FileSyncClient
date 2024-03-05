@@ -17,8 +17,8 @@ class FileSyncClient:
         Class for managing file synchronization between the client and a server.
 
         Args:
-            sync_paths (List[str]): A list of paths to directories to be synchronized.
-            mode (int, optional): Mode of synchronization.
+            sync_paths (List[str]): A list of paths to directories to be synchronized
+            mode (int, optional): Mode of synchronization
                 - 0: Doesn't delete files form the server if they are not presented on local machine anymore (default).
                 - 1: Deletes files from the server if they are missing on local machine.
         """
@@ -69,18 +69,21 @@ class FileSyncClient:
             relative_path = get_relative_path(self.sync_paths, file)
 
             event = get_offline_event_type(file, file_hash, server_hash_table)
+            task = None
             match event:
                 case 1:
                     task = asyncio.create_task(requests.file_hash_update(session, relative_path, file, file_hash))
                 case 2:
                     task = asyncio.create_task(requests.file_hash_update(session, relative_path, file, file_hash))
                     del server_hash_table[file]
-                case default:
+                case str():
                     old_rel_path = get_relative_path(self.sync_paths, event)
                     task = asyncio.create_task(
                         requests.file_name_update(session, event, old_rel_path, file, relative_path)
                     )
                     del server_hash_table[event]
+                case None:
+                    continue
 
             tasks.append(task)
             await asyncio.sleep(0)
@@ -112,7 +115,7 @@ class FileSyncClient:
         logger.debug(f"Hash table created!")
 
 
-def get_offline_event_type(file: str | Path, file_hash: str, server_hash_table: Dict) -> int | str:
+def get_offline_event_type(file: str | Path, file_hash: str, server_hash_table: Dict) -> int | str | None:
     """
     Determines the type of offline event for a given file based on its value and the server's hash table
 
@@ -122,20 +125,24 @@ def get_offline_event_type(file: str | Path, file_hash: str, server_hash_table: 
         server_hash_table (Dict): A Dict representing the server's hash table
 
     Returns:
-        int | str: The event type
-            - 1: File name was changed (content remains unchanged)
-            - 2: File content was changed
-            - str: Old file name if both the name and the content of the file was changed
+        int | str | None: The event type
+            - 1: New file or both file name and content were changed
+            - 2: File content were changed
+            - str: Old file name from server hash table if file name was changed
+            - None: No offline event happened
     """
-    if file in server_hash_table and file_hash != server_hash_table[file]:
-        # File content was changed
-        return 2
-    elif file_hash in server_hash_table.values():
-        # File name was changed (content remains unchanged)
-        # looking for old file name in server data
+    if file in server_hash_table:
+        if file_hash == server_hash_table[file]:
+            # no offline event
+            return None
+        else:
+            # file content was changed
+            return 2
+    else:
+        # was changed file name or both name and content, or a new file was created
         for server_file in server_hash_table:
             if server_hash_table[server_file] == file_hash:
+                # file name was changed
                 return server_file
-    else:
-        # New file or old file that was renamed and which content was changed
+        # new file or file name and content were changed
         return 1
