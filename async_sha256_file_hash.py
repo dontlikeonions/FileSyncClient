@@ -5,15 +5,9 @@ import aiofiles
 from logs.logger import logger
 
 
-chunk_size = 1024
-
-
-async def calculate_hash(file_path: str | Path) -> str:
+async def calculate_hash(file_path: str | Path, chunk_size: int = 1024) -> str:
     """
     Asynchronously calculate the SHA256 hash of a file
-
-    Args:
-        file_path (str | Path): The path to the file
 
     Returns:
         str: A hexadecimal string representing the SHA256 hash digest of the file
